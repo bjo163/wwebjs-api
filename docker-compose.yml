@@ -14,6 +14,7 @@ services:
       - SET_MESSAGES_AS_SEEN=FALSE
       - DISABLED_CALLBACKS=message_ack|message_reaction
       - ENABLE_SWAGGER_ENDPOINT=TRUE
+      - CHROME_BIN=/usr/bin/chromium
     volumes:
       - wwebjs_sessions:/usr/src/app/sessions
 
