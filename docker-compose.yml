@@ -6,7 +6,7 @@ services:
     image: avoylenko/wwebjs-api:latest
     restart: always
     ports:
-      - "3000:3000"
+      - "3000"
     environment:
       - BASE_WEBHOOK_URL=http://localhost:3000/localCallbackExample
       - ENABLE_LOCAL_CALLBACK_EXAMPLE=TRUE
