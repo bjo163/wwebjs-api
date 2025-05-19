@@ -8,10 +8,10 @@ services:
     ports:
       - "3000"
     environment:
-      - BASE_WEBHOOK_URL=http://localhost:3000/localCallbackExample
-      - ENABLE_LOCAL_CALLBACK_EXAMPLE=TRUE
+      - BASE_WEBHOOK_URL=https://whatsapp-server.apps.pundidigitaldynamics.net/api/v1/webhook/wwebjs
+      - ENABLE_LOCAL_CALLBACK_EXAMPLE=FALSE
       - MAX_ATTACHMENT_SIZE=5000000
-      - SET_MESSAGES_AS_SEEN=TRUE
+      - SET_MESSAGES_AS_SEEN=FALSE
       - DISABLED_CALLBACKS=message_ack|message_reaction
       - ENABLE_SWAGGER_ENDPOINT=TRUE
     volumes:
