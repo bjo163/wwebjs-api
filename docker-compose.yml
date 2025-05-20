@@ -7,8 +7,10 @@ services:
     restart: always
     ports:
       - "3000"
+    env_file:
+      - .env
     environment:
-      - BASE_WEBHOOK_URL=https://backend-api.apps.pundidigitaldynamics.net/api/v1/webhook/wwebjs
+      - BASE_WEBHOOK_URL=${BASE_WEBHOOK_URL}
       - ENABLE_LOCAL_CALLBACK_EXAMPLE=FALSE
       - MAX_ATTACHMENT_SIZE=5000000
       - SET_MESSAGES_AS_SEEN=FALSE
