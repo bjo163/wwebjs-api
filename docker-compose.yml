@@ -17,7 +17,7 @@ services:
       # - DISABLED_CALLBACKS=message_ack|message_reaction
       - ENABLE_SWAGGER_ENDPOINT=TRUE
       # - CHROME_BIN=/usr/bin/chromium
-      # - PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+      - PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=false
       # - NODE_ENV=production
     volumes:
       - wwebjs_sessions:/usr/src/app/sessions
