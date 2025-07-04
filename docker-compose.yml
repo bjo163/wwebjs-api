@@ -2,7 +2,6 @@ version: '3.8'
 
 services:
   wwebjs-api:
-    # build: .
     image: avoylenko/wwebjs-api:latest # Pull the image from Docker Hub
     restart: always
     container_name: wwebjs-api
