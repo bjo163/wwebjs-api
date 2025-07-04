@@ -20,7 +20,7 @@ services:
       - PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=false
       # - NODE_ENV=production
     volumes:
-      - wwebjs_sessions:/usr/src/app/sessions
+      - wwebjs:/usr/src/app/sessions
 
 volumes:
-  wwebjs_sessions:
+  wwebjs:
