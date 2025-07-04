@@ -1,12 +1,12 @@
 version: '3.8'
 
 services:
-  app:
-    container_name: wwebjs_api
-    image: avoylenko/wwebjs-api:latest
-    restart: always
+  wwebjs-api:
+    build: .
+    container_name: wwebjs-api
+    restart: unless-stopped
     ports:
-      - "3000"
+      - "3000:3000"
     env_file:
       - .env
     environment:
@@ -17,6 +17,8 @@ services:
       - DISABLED_CALLBACKS=message_ack|message_reaction
       - ENABLE_SWAGGER_ENDPOINT=TRUE
       - CHROME_BIN=/usr/bin/chromium
+      - PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+      - NODE_ENV=production
     volumes:
       - wwebjs_sessions:/usr/src/app/sessions
 
