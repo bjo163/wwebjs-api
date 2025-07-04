@@ -13,12 +13,12 @@ services:
       - BASE_WEBHOOK_URL=${BASE_WEBHOOK_URL}
       - ENABLE_LOCAL_CALLBACK_EXAMPLE=FALSE
       - MAX_ATTACHMENT_SIZE=5000000
-      - SET_MESSAGES_AS_SEEN=FALSE
-      - DISABLED_CALLBACKS=message_ack|message_reaction
-      - ENABLE_SWAGGER_ENDPOINT=TRUE
-      - CHROME_BIN=/usr/bin/chromium
-      - PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
-      - NODE_ENV=production
+      # - SET_MESSAGES_AS_SEEN=FALSE
+      # - DISABLED_CALLBACKS=message_ack|message_reaction
+      # - ENABLE_SWAGGER_ENDPOINT=TRUE
+      # - CHROME_BIN=/usr/bin/chromium
+      # - PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+      # - NODE_ENV=production
     volumes:
       - wwebjs_sessions:/usr/src/app/sessions
 
