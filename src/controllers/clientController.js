@@ -1,4 +1,4 @@
-const { MessageMedia, Location, Poll } = require('whatsapp-web.js')
+const { MessageMedia, Location, Poll, Buttons } = require('whatsapp-web.js')
 const { sessions } = require('../sessions')
 const { sendErrorResponse } = require('../utils')
 
@@ -105,6 +105,29 @@ const sendMessage = async (req, res) => {
         messageOut = await client.sendMessage(chatId, poll, options)
         // fix for poll events not being triggered (open the chat that you sent the poll)
         await client.interface.openChatWindow(chatId)
+        break
+      }
+      case 'Buttons': {
+        /*
+          content example:
+          {
+            body: 'Hello World!',
+            buttons: [
+              { id: 'customId', body: 'button1' },
+              { body: 'button2' },
+              { body: 'button3' },
+              { body: 'button4' }
+            ],
+            title: 'Hello World!',
+            footer: 'Hello World!'
+          }
+        */
+        const { body, buttons, title, footer, headerType } = content
+        if (!body || !Array.isArray(buttons) || buttons.length === 0) {
+          return sendErrorResponse(res, 400, 'Buttons content must include body and non-empty buttons array')
+        }
+        const buttonsMsg = new Buttons(body, buttons, title, footer, headerType)
+        messageOut = await client.sendMessage(chatId, buttonsMsg, options)
         break
       }
       default:
