@@ -6,7 +6,7 @@ services:
     container_name: wwebjs-api
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "3000"
     env_file:
       - .env
     environment:
