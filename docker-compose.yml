@@ -5,7 +5,6 @@ services:
     image: avoylenko/wwebjs-api:latest # Pull the image from Docker Hub
     restart: always
     container_name: wwebjs-api
-    restart: unless-stopped
     ports:
       - "3000"
     env_file:
