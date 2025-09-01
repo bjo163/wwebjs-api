@@ -9,7 +9,7 @@ services:
     container_name: wwebjs-api
     restart: always
     ports:
-      - "3000:3000"
+      - "3000"
     environment:
       # Core Configuration
       # - BASE_WEBHOOK_URL=http://localhost:3000/localCallbackExample
