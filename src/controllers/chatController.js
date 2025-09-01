@@ -293,13 +293,21 @@ const sendSeen = async (req, res) => {
   try {
     const { chatId } = req.body
     const client = sessions.get(req.params.sessionId)
-    const chat = await client.getChatById(chatId)
-    if (!chat) {
-      sendErrorResponse(res, 404, 'Chat not Found')
-      return
-    }
-    const result = await chat.sendSeen()
-    res.json({ success: true, result })
+      if (!client) {
+        sendErrorResponse(res, 404, 'Client not found')
+        return
+      }
+      const chat = await client.getChatById(chatId)
+      if (!chat) {
+        sendErrorResponse(res, 404, 'Chat not Found')
+        return
+      }
+      if (typeof chat.sendSeen !== 'function') {
+        sendErrorResponse(res, 500, 'sendSeen method not available on chat')
+        return
+      }
+      const result = await chat.sendSeen()
+      res.json({ success: true, result })
   } catch (error) {
     sendErrorResponse(res, 500, error.message)
   }
