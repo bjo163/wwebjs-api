@@ -185,6 +185,16 @@ const setupSession = async (sessionId) => {
       }
       // Ensure namespace exists
       window.WWebJS = window.WWebJS || {}
+      window.Store = window.Store || {}
+      // Ensure Store.SendSeen exists
+      try {
+        if (!window.Store.SendSeen && window.mR?.findModule) {
+          const mod = window.mR.findModule('sendSeen')
+          if (Array.isArray(mod) && mod[0]) {
+            window.Store.SendSeen = mod[0]
+          }
+        }
+      } catch (_) { }
       window.WWebJS.getChat = async (chatId, { getAsModel = true } = {}) => {
         const isChannel = /@\w*newsletter\b/.test(chatId)
         const chatWid = window.Store.WidFactory.createWid(chatId)
@@ -204,9 +214,21 @@ const setupSession = async (sessionId) => {
           chat = window.Store.Chat.get(chatWid) || (await window.Store.FindOrCreateChat.findOrCreateLatestChat(chatWid))?.chat
         }
 
-        return getAsModel && chat
+        return getAsModel && chat && window.WWebJS.getChatModel
           ? await window.WWebJS.getChatModel(chat, { isChannel })
           : chat
+      }
+      if (!window.WWebJS.sendSeen) {
+        window.WWebJS.sendSeen = async (chatId) => {
+          try {
+            const chat = await window.WWebJS.getChat(chatId, { getAsModel: false })
+            if (!chat || !window.Store?.SendSeen?.sendSeen) return false
+            await window.Store.SendSeen.sendSeen(chat)
+            return true
+          } catch (_) {
+            return false
+          }
+        }
       }
     }).catch(() => { })
 
@@ -545,6 +567,15 @@ const ensurePageHelpers = async (client) => {
         // ignore
       }
       window.WWebJS = window.WWebJS || {}
+      window.Store = window.Store || {}
+      try {
+        if (!window.Store.SendSeen && window.mR?.findModule) {
+          const mod = window.mR.findModule('sendSeen')
+          if (Array.isArray(mod) && mod[0]) {
+            window.Store.SendSeen = mod[0]
+          }
+        }
+      } catch (_) { }
       if (!window.WWebJS.getChat) {
         window.WWebJS.getChat = async (chatId, { getAsModel = true } = {}) => {
           const isChannel = /@\w*newsletter\b/.test(chatId)
@@ -563,9 +594,21 @@ const ensurePageHelpers = async (client) => {
           } else {
             chat = window.Store.Chat.get(chatWid) || (await window.Store.FindOrCreateChat.findOrCreateLatestChat(chatWid))?.chat
           }
-          return getAsModel && chat
+          return getAsModel && chat && window.WWebJS.getChatModel
             ? await window.WWebJS.getChatModel(chat, { isChannel })
             : chat
+        }
+      }
+      if (!window.WWebJS.sendSeen) {
+        window.WWebJS.sendSeen = async (chatId) => {
+          try {
+            const chat = await window.WWebJS.getChat(chatId, { getAsModel: false })
+            if (!chat || !window.Store?.SendSeen?.sendSeen) return false
+            await window.Store.SendSeen.sendSeen(chat)
+            return true
+          } catch (_) {
+            return false
+          }
         }
       }
     }).catch(() => { })
