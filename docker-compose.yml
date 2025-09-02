@@ -16,7 +16,7 @@ services:
       # Core Configuration
       # - BASE_WEBHOOK_URL=http://localhost:3000/localCallbackExample
       - MAX_ATTACHMENT_SIZE=5000000 # In bytes (5MB)
-      - SET_MESSAGES_AS_SEEN=FALSE
+      - SET_MESSAGES_AS_SEEN=TRUE
       - ENABLE_LOCAL_CALLBACK_EXAMPLE=TRUE
       - ENABLE_SWAGGER_ENDPOINT=TRUE
       - RECOVER_SESSIONS=TRUE

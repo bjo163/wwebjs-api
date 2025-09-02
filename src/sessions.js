@@ -189,6 +189,15 @@ const setupSession = async (sessionId) => {
       // Ensure namespace exists
       window.WWebJS = window.WWebJS || {}
       window.Store = window.Store || {}
+      // Ensure base collections (including Chat) are present
+      try {
+        if (!window.Store.Chat) {
+          const collections = window.require('WAWebCollections')
+          if (collections) {
+            window.Store = Object.assign(window.Store, collections)
+          }
+        }
+      } catch (_) { }
       // Shim AppState access between Store and AuthStore, and provide safe default
       try {
         window.AuthStore = window.AuthStore || {}
@@ -211,7 +220,7 @@ const setupSession = async (sessionId) => {
           }
         }
       } catch (_) { }
-  if (!window.WWebJS.getChat && window.Store?.WidFactory?.createWid) {
+  if (!window.WWebJS.getChat && window.Store?.WidFactory?.createWid && (window.Store?.Chat?.get || window.Store?.Chat?.find)) {
         window.WWebJS.getChat = async (chatId, { getAsModel = true } = {}) => {
           const isChannel = /@\w*newsletter\b/.test(chatId)
           const chatWid = window.Store.WidFactory.createWid(chatId)
@@ -590,6 +599,14 @@ const ensurePageHelpers = async (client) => {
       window.WWebJS = window.WWebJS || {}
       window.Store = window.Store || {}
       try {
+        if (!window.Store.Chat) {
+          const collections = window.require('WAWebCollections')
+          if (collections) {
+            window.Store = Object.assign(window.Store, collections)
+          }
+        }
+      } catch (_) { }
+      try {
         window.AuthStore = window.AuthStore || {}
         if (!window.Store.AppState && window.AuthStore?.AppState) {
           window.Store.AppState = window.AuthStore.AppState
@@ -609,7 +626,7 @@ const ensurePageHelpers = async (client) => {
           }
         }
       } catch (_) { }
-  if (!window.WWebJS.getChat && window.Store?.WidFactory?.createWid) {
+  if (!window.WWebJS.getChat && window.Store?.WidFactory?.createWid && (window.Store?.Chat?.get || window.Store?.Chat?.find)) {
         window.WWebJS.getChat = async (chatId, { getAsModel = true } = {}) => {
           const isChannel = /@\w*newsletter\b/.test(chatId)
           const chatWid = window.Store.WidFactory.createWid(chatId)
@@ -652,10 +669,14 @@ const ensurePageHelpers = async (client) => {
 const ensureWWebReady = async (client, timeoutMs = 5000) => {
   try {
     if (!client?.pupPage) return false
-    const result = await client.pupPage.evaluate(async (timeoutMs) => {
+  const result = await client.pupPage.evaluate(async (timeoutMs) => {
       const start = Date.now()
       while (true) {
-        const ready = !!(window.Store?.WidFactory?.createWid && typeof window.WWebJS?.getChat === 'function')
+    // Require WidFactory, Chat collection, and a working getChat helper
+    const hasWidFactory = !!window.Store?.WidFactory?.createWid
+    const hasChat = !!(window.Store?.Chat && (window.Store.Chat.get || window.Store.Chat.find))
+    const hasGetChat = typeof window.WWebJS?.getChat === 'function'
+    const ready = hasWidFactory && hasChat && hasGetChat
         if (ready) return true
         if (Date.now() - start > timeoutMs) return false
         await new Promise(r => setTimeout(r, 100))
