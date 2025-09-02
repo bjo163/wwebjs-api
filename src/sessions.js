@@ -202,6 +202,32 @@ const setupSession = async (sessionId) => {
           window.Store.User = window.require('WAWebUserPrefsMeUser')
         }
       } catch (_) { }
+      // Polyfill missing me getters from ContactCollection if still absent
+      try {
+        if (!window.Store.User) window.Store.User = {}
+        if (typeof window.Store.User.getMaybeMeUser !== 'function') {
+          window.Store.User.getMaybeMeUser = () => {
+            try {
+              const me = window.Store.ContactCollection?.getMeContact?.()
+              if (me?.id) return me.id
+            } catch (_) {}
+            return null
+          }
+        }
+        if (typeof window.Store.User.getMaybeMeLidUser !== 'function') {
+          window.Store.User.getMaybeMeLidUser = () => {
+            try {
+              const me = window.Store.ContactCollection?.getMeContact?.()
+              if (me?.id) {
+                if (typeof me.id.isLid === 'function' && me.id.isLid()) return me.id
+                const user = me.id.user || (me.id._serialized?.split('@')[0])
+                if (user && window.Store.WidFactory?.createWid) return window.Store.WidFactory.createWid(`${user}@lid`)
+              }
+            } catch (_) {}
+            return null
+          }
+        }
+      } catch (_) { }
       // Ensure base collections (including Chat) are present
       try {
         const collections = window.require('WAWebCollections')
@@ -636,6 +662,31 @@ const ensurePageHelpers = async (client) => {
         }
       } catch (_) { }
       try {
+        if (!window.Store.User) window.Store.User = {}
+        if (typeof window.Store.User.getMaybeMeUser !== 'function') {
+          window.Store.User.getMaybeMeUser = () => {
+            try {
+              const me = window.Store.ContactCollection?.getMeContact?.()
+              if (me?.id) return me.id
+            } catch (_) {}
+            return null
+          }
+        }
+        if (typeof window.Store.User.getMaybeMeLidUser !== 'function') {
+          window.Store.User.getMaybeMeLidUser = () => {
+            try {
+              const me = window.Store.ContactCollection?.getMeContact?.()
+              if (me?.id) {
+                if (typeof me.id.isLid === 'function' && me.id.isLid()) return me.id
+                const user = me.id.user || (me.id._serialized?.split('@')[0])
+                if (user && window.Store.WidFactory?.createWid) return window.Store.WidFactory.createWid(`${user}@lid`)
+              }
+            } catch (_) {}
+            return null
+          }
+        }
+      } catch (_) { }
+      try {
         const collections = window.require('WAWebCollections')
         if (collections) {
           Object.keys(collections).forEach((key) => {
@@ -717,16 +768,48 @@ const ensureWWebUser = async (client) => {
         if (!window.Store.User || typeof window.Store.User.getMaybeMeUser !== 'function' || typeof window.Store.User.getMaybeMeLidUser !== 'function') {
           try {
             const mod = window.require && window.require('WAWebUserPrefsMeUser')
-            if (mod) window.Store.User = mod
+            if (mod) {
+              window.Store.User = window.Store.User || {}
+              // merge without overwriting existing keys
+              Object.keys(mod).forEach(k => { if (!(k in window.Store.User)) window.Store.User[k] = mod[k] })
+            }
           } catch (_) {}
-          if (!window.Store.User || typeof window.Store.User.getMaybeMeUser !== 'function') {
+          if ((!window.Store.User || typeof window.Store.User.getMaybeMeUser !== 'function') && window.mR?.findModule) {
             try {
-              if (window.mR?.findModule) {
-                const arr = window.mR.findModule('getMaybeMeUser')
-                if (Array.isArray(arr) && arr[0]) window.Store.User = arr[0]
+              const arr = window.mR.findModule('getMaybeMeUser')
+              if (Array.isArray(arr) && arr[0]) {
+                const mod2 = arr[0]
+                window.Store.User = window.Store.User || {}
+                Object.keys(mod2).forEach(k => { if (!(k in window.Store.User)) window.Store.User[k] = mod2[k] })
               }
             } catch (_) {}
           }
+          // As last resort, polyfill getters via ContactCollection
+          try {
+            if (!window.Store.User) window.Store.User = {}
+            if (typeof window.Store.User.getMaybeMeUser !== 'function') {
+              window.Store.User.getMaybeMeUser = () => {
+                try {
+                  const me = window.Store.ContactCollection?.getMeContact?.()
+                  if (me?.id) return me.id
+                } catch (_) {}
+                return null
+              }
+            }
+            if (typeof window.Store.User.getMaybeMeLidUser !== 'function') {
+              window.Store.User.getMaybeMeLidUser = () => {
+                try {
+                  const me = window.Store.ContactCollection?.getMeContact?.()
+                  if (me?.id) {
+                    if (typeof me.id.isLid === 'function' && me.id.isLid()) return me.id
+                    const user = me.id.user || (me.id._serialized?.split('@')[0])
+                    if (user && window.Store.WidFactory?.createWid) return window.Store.WidFactory.createWid(`${user}@lid`)
+                  }
+                } catch (_) {}
+                return null
+              }
+            }
+          } catch (_) { }
         }
       } catch (_) {}
       return !!(window.Store?.User && typeof window.Store.User.getMaybeMeUser === 'function' && typeof window.Store.User.getMaybeMeLidUser === 'function')
@@ -749,16 +832,47 @@ const ensureWWebReady = async (client, timeoutMs = 5000) => {
           if (!window.Store?.User || typeof window.Store.User.getMaybeMeUser !== 'function' || typeof window.Store.User.getMaybeMeLidUser !== 'function') {
             try {
               const mod = window.require && window.require('WAWebUserPrefsMeUser')
-              if (mod) window.Store.User = mod
+              if (mod) {
+                window.Store.User = window.Store.User || {}
+                Object.keys(mod).forEach(k => { if (!(k in window.Store.User)) window.Store.User[k] = mod[k] })
+              }
             } catch (_) {}
-            if (!window.Store.User || typeof window.Store.User.getMaybeMeUser !== 'function') {
+            if ((!window.Store.User || typeof window.Store.User.getMaybeMeUser !== 'function') && window.mR?.findModule) {
               try {
-                if (window.mR?.findModule) {
-                  const arr = window.mR.findModule('getMaybeMeUser')
-                  if (Array.isArray(arr) && arr[0]) window.Store.User = arr[0]
+                const arr = window.mR.findModule('getMaybeMeUser')
+                if (Array.isArray(arr) && arr[0]) {
+                  const mod2 = arr[0]
+                  window.Store.User = window.Store.User || {}
+                  Object.keys(mod2).forEach(k => { if (!(k in window.Store.User)) window.Store.User[k] = mod2[k] })
                 }
               } catch (_) {}
             }
+            // As last resort, polyfill getters via ContactCollection
+            try {
+              if (!window.Store.User) window.Store.User = {}
+              if (typeof window.Store.User.getMaybeMeUser !== 'function') {
+                window.Store.User.getMaybeMeUser = () => {
+                  try {
+                    const me = window.Store.ContactCollection?.getMeContact?.()
+                    if (me?.id) return me.id
+                  } catch (_) {}
+                  return null
+                }
+              }
+              if (typeof window.Store.User.getMaybeMeLidUser !== 'function') {
+                window.Store.User.getMaybeMeLidUser = () => {
+                  try {
+                    const me = window.Store.ContactCollection?.getMeContact?.()
+                    if (me?.id) {
+                      if (typeof me.id.isLid === 'function' && me.id.isLid()) return me.id
+                      const user = me.id.user || (me.id._serialized?.split('@')[0])
+                      if (user && window.Store.WidFactory?.createWid) return window.Store.WidFactory.createWid(`${user}@lid`)
+                    }
+                  } catch (_) {}
+                  return null
+                }
+              }
+            } catch (_) { }
           }
         } catch (_) {}
     // Require WidFactory, Chat collection, and a working getChat helper
