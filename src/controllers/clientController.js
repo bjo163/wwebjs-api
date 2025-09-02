@@ -66,6 +66,14 @@ const sendMessage = async (req, res) => {
   try {
     const { chatId, content, contentType, options = {}, mediaFromURLOptions = {} } = req.body
     const client = sessions.get(req.params.sessionId)
+    if (!client) {
+      return sendErrorResponse(res, 404, 'Client not found')
+    }
+    // try to ensure browser-side helpers are injected to avoid getChat undefined during send
+    try {
+      const { ensurePageHelpers } = require('../sessions')
+      await ensurePageHelpers(client)
+    } catch (_) { }
     const sendOptions = { waitUntilMsgSent: true, ...options }
 
     let messageOut

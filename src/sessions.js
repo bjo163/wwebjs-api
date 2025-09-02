@@ -176,43 +176,46 @@ const setupSession = async (sessionId) => {
       }
     }
 
-    try {
-      await client.initialize()
-      // hotfix for https://github.com/pedroslopez/whatsapp-web.js/pull/3703
-      client.once('ready', () => {
-        client.pupPage.evaluate(() => {
+    // helper to inject WWebJS.getChat safely
+    const injectGetChat = () => client.pupPage?.evaluate(() => {
+      try {
+        window.Store.FindOrCreateChat = window.require('WAWebFindChatAction')
+      } catch (e) {
+        // ignore if module is not present
+      }
+      // Ensure namespace exists
+      window.WWebJS = window.WWebJS || {}
+      window.WWebJS.getChat = async (chatId, { getAsModel = true } = {}) => {
+        const isChannel = /@\w*newsletter\b/.test(chatId)
+        const chatWid = window.Store.WidFactory.createWid(chatId)
+        let chat
+
+        if (isChannel) {
           try {
-            window.Store.FindOrCreateChat = window.require('WAWebFindChatAction')
-          } catch (e) {
-            // no-op; fallback to existing FindOrCreateChat if available
-          }
-          // Ensure namespace exists
-          window.WWebJS = window.WWebJS || {}
-          window.WWebJS.getChat = async (chatId, { getAsModel = true } = {}) => {
-            const isChannel = /@\w*newsletter\b/.test(chatId)
-            const chatWid = window.Store.WidFactory.createWid(chatId)
-            let chat
-
-            if (isChannel) {
-              try {
-                chat = window.Store.NewsletterCollection.get(chatId)
-                if (!chat) {
-                  await window.Store.ChannelUtils.loadNewsletterPreviewChat(chatId)
-                  chat = await window.Store.NewsletterCollection.find(chatWid)
-                }
-              } catch (err) {
-                chat = null
-              }
-            } else {
-              chat = window.Store.Chat.get(chatWid) || (await window.Store.FindOrCreateChat.findOrCreateLatestChat(chatWid))?.chat
+            chat = window.Store.NewsletterCollection.get(chatId)
+            if (!chat) {
+              await window.Store.ChannelUtils.loadNewsletterPreviewChat(chatId)
+              chat = await window.Store.NewsletterCollection.find(chatWid)
             }
-
-            return getAsModel && chat
-              ? await window.WWebJS.getChatModel(chat, { isChannel })
-              : chat
+          } catch (err) {
+            chat = null
           }
-        }).catch(() => { })
-      })
+        } else {
+          chat = window.Store.Chat.get(chatWid) || (await window.Store.FindOrCreateChat.findOrCreateLatestChat(chatWid))?.chat
+        }
+
+        return getAsModel && chat
+          ? await window.WWebJS.getChatModel(chat, { isChannel })
+          : chat
+      }
+    }).catch(() => { })
+
+    try {
+      // set listener before initialize to avoid missing the event
+      client.on('ready', () => injectGetChat())
+      await client.initialize()
+      // also inject immediately (idempotent) in case ready already fired
+      await injectGetChat()
     } catch (error) {
       logger.error({ sessionId, err: error }, 'Initialize error')
       throw error
@@ -531,6 +534,44 @@ const reloadSession = async (sessionId) => {
   }
 }
 
+// Ensure helper functions are available inside browser context
+const ensurePageHelpers = async (client) => {
+  try {
+    if (!client?.pupPage) return
+    await client.pupPage.evaluate(() => {
+      try {
+        window.Store.FindOrCreateChat = window.require('WAWebFindChatAction')
+      } catch (e) {
+        // ignore
+      }
+      window.WWebJS = window.WWebJS || {}
+      if (!window.WWebJS.getChat) {
+        window.WWebJS.getChat = async (chatId, { getAsModel = true } = {}) => {
+          const isChannel = /@\w*newsletter\b/.test(chatId)
+          const chatWid = window.Store.WidFactory.createWid(chatId)
+          let chat
+          if (isChannel) {
+            try {
+              chat = window.Store.NewsletterCollection.get(chatId)
+              if (!chat) {
+                await window.Store.ChannelUtils.loadNewsletterPreviewChat(chatId)
+                chat = await window.Store.NewsletterCollection.find(chatWid)
+              }
+            } catch (err) {
+              chat = null
+            }
+          } else {
+            chat = window.Store.Chat.get(chatWid) || (await window.Store.FindOrCreateChat.findOrCreateLatestChat(chatWid))?.chat
+          }
+          return getAsModel && chat
+            ? await window.WWebJS.getChatModel(chat, { isChannel })
+            : chat
+        }
+      }
+    }).catch(() => { })
+  } catch (_) { }
+}
+
 const destroySession = async (sessionId) => {
   try {
     const client = sessions.get(sessionId)
@@ -625,5 +666,6 @@ module.exports = {
   deleteSession,
   reloadSession,
   flushSessions,
-  destroySession
+  destroySession,
+  ensurePageHelpers
 }
