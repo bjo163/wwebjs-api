@@ -6,7 +6,8 @@ name: wwebjs-api
 services:
   api:
     # build: .
-    image: avoylenko/wwebjs-api:latest
+    image: chrishubert/whatsapp-web-api:latest # Pull the image from Docker Hub
+    #image: avoylenko/wwebjs-api:latest
     container_name: wwebjs-api
     restart: always
     ports:
