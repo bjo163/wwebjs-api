@@ -882,7 +882,8 @@ const ensureWWebReady = async (client, timeoutMs = 5000) => {
     const hasSendSeen = typeof window.WWebJS?.sendSeen === 'function'
     const hasSendMessage = typeof window.WWebJS?.sendMessage === 'function'
   const hasMeGetter = typeof window.Store?.User?.getMaybeMeUser === 'function'
-  const ready = hasWidFactory && hasChat && hasGetChat && hasSendSeen && hasSendMessage && hasMeGetter
+  const hasMeLidGetter = typeof window.Store?.User?.getMaybeMeLidUser === 'function'
+  const ready = hasWidFactory && hasChat && hasGetChat && hasSendSeen && hasSendMessage && hasMeGetter && hasMeLidGetter
         if (ready) return true
         if (Date.now() - start > timeoutMs) return false
         await new Promise(r => setTimeout(r, 100))
@@ -897,6 +898,7 @@ const ensureWWebReady = async (client, timeoutMs = 5000) => {
           hasSendSeen: typeof window.WWebJS?.sendSeen === 'function',
           hasSendMessage: typeof window.WWebJS?.sendMessage === 'function',
           hasMeGetter: typeof window.Store?.User?.getMaybeMeUser === 'function',
+          hasMeLidGetter: typeof window.Store?.User?.getMaybeMeLidUser === 'function',
           version: window.Debug?.VERSION
         }))
         // eslint-disable-next-line no-console
