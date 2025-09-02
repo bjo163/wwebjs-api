@@ -1,8 +1,9 @@
 const { Client, LocalAuth } = require('whatsapp-web.js')
 // Pull official injected helpers to force-load when needed
-let ExposeStore, LoadUtils
+let ExposeStore, ExposeLegacyStore, LoadUtils
 try {
   ({ ExposeStore } = require('whatsapp-web.js/src/util/Injected/Store'))
+  ;({ ExposeLegacyStore } = require('whatsapp-web.js/src/util/Injected/LegacyStore'))
   ;({ LoadUtils } = require('whatsapp-web.js/src/util/Injected/Utils'))
 } catch (_) { /* optional; fallback to our light shims */ }
 const fs = require('fs')
@@ -285,6 +286,11 @@ const setupSession = async (sessionId) => {
       // Proactively load official Store/Utils if not yet injected by the library
       try {
         if (ExposeStore) await client.pupPage?.evaluate(ExposeStore)
+      } catch (_) { }
+      try {
+        if (ExposeLegacyStore) await client.pupPage?.evaluate(ExposeLegacyStore)
+      } catch (_) { }
+      try {
         if (LoadUtils) await client.pupPage?.evaluate(LoadUtils)
       } catch (_) { }
     } catch (error) {
@@ -610,10 +616,9 @@ const ensurePageHelpers = async (client) => {
   try {
     if (!client?.pupPage) return
     // Try to load the official Store/Utils first; ignore errors (will be retried)
-    try {
-      if (ExposeStore) await client.pupPage.evaluate(ExposeStore)
-      if (LoadUtils) await client.pupPage.evaluate(LoadUtils)
-    } catch (_) { }
+  try { if (ExposeStore) await client.pupPage.evaluate(ExposeStore) } catch (_) { }
+  try { if (ExposeLegacyStore) await client.pupPage.evaluate(ExposeLegacyStore) } catch (_) { }
+  try { if (LoadUtils) await client.pupPage.evaluate(LoadUtils) } catch (_) { }
     await client.pupPage.evaluate(() => {
       try {
         window.Store.FindOrCreateChat = window.require('WAWebFindChatAction')
@@ -734,10 +739,9 @@ const ensureWWebReady = async (client, timeoutMs = 5000) => {
   try {
     if (!client?.pupPage) return false
     // Attempt to inject official Store/Utils before waiting
-    try {
-      if (ExposeStore) await client.pupPage.evaluate(ExposeStore)
-      if (LoadUtils) await client.pupPage.evaluate(LoadUtils)
-    } catch (_) { }
+  try { if (ExposeStore) await client.pupPage.evaluate(ExposeStore) } catch (_) { }
+  try { if (ExposeLegacyStore) await client.pupPage.evaluate(ExposeLegacyStore) } catch (_) { }
+  try { if (LoadUtils) await client.pupPage.evaluate(LoadUtils) } catch (_) { }
     const result = await client.pupPage.evaluate(async (timeoutMs) => {
       const start = Date.now()
       while (true) {
@@ -770,6 +774,21 @@ const ensureWWebReady = async (client, timeoutMs = 5000) => {
         await new Promise(r => setTimeout(r, 100))
       }
     }, timeoutMs)
+    if (!result) {
+      try {
+        const flags = await client.pupPage.evaluate(() => ({
+          hasWidFactory: !!window.Store?.WidFactory?.createWid,
+          hasChat: !!(window.Store?.Chat && (window.Store.Chat.get || window.Store.Chat.find)),
+          hasGetChat: typeof window.WWebJS?.getChat === 'function',
+          hasSendSeen: typeof window.WWebJS?.sendSeen === 'function',
+          hasSendMessage: typeof window.WWebJS?.sendMessage === 'function',
+          hasMeGetter: typeof window.Store?.User?.getMaybeMeUser === 'function',
+          version: window.Debug?.VERSION
+        }))
+        // eslint-disable-next-line no-console
+        console.warn('WWeb readiness flags', flags)
+      } catch (_) { }
+    }
     return !!result
   } catch (_) { return false }
 }
