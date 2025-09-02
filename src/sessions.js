@@ -195,13 +195,21 @@ const setupSession = async (sessionId) => {
       // Ensure namespace exists
       window.WWebJS = window.WWebJS || {}
       window.Store = window.Store || {}
+      // Ensure User module (provides getMaybeMeUser) exists
+      try {
+        if (!window.Store.User || typeof window.Store.User.getMaybeMeUser !== 'function') {
+          window.Store.User = window.require('WAWebUserPrefsMeUser')
+        }
+      } catch (_) { }
       // Ensure base collections (including Chat) are present
       try {
-        if (!window.Store.Chat) {
-          const collections = window.require('WAWebCollections')
-          if (collections) {
-            window.Store = Object.assign(window.Store, collections)
-          }
+        const collections = window.require('WAWebCollections')
+        if (collections) {
+          Object.keys(collections).forEach((key) => {
+            if (!(key in window.Store)) {
+              window.Store[key] = collections[key]
+            }
+          })
         }
       } catch (_) { }
       // Shim AppState access between Store and AuthStore, and provide safe default
@@ -618,11 +626,18 @@ const ensurePageHelpers = async (client) => {
       window.WWebJS = window.WWebJS || {}
       window.Store = window.Store || {}
       try {
-        if (!window.Store.Chat) {
-          const collections = window.require('WAWebCollections')
-          if (collections) {
-            window.Store = Object.assign(window.Store, collections)
-          }
+        if (!window.Store.User || typeof window.Store.User.getMaybeMeUser !== 'function') {
+          window.Store.User = window.require('WAWebUserPrefsMeUser')
+        }
+      } catch (_) { }
+      try {
+        const collections = window.require('WAWebCollections')
+        if (collections) {
+          Object.keys(collections).forEach((key) => {
+            if (!(key in window.Store)) {
+              window.Store[key] = collections[key]
+            }
+          })
         }
       } catch (_) { }
       try {
@@ -702,10 +717,11 @@ const ensureWWebReady = async (client, timeoutMs = 5000) => {
     // Require WidFactory, Chat collection, and a working getChat helper
     const hasWidFactory = !!window.Store?.WidFactory?.createWid
     const hasChat = !!(window.Store?.Chat && (window.Store.Chat.get || window.Store.Chat.find))
-    const hasGetChat = typeof window.WWebJS?.getChat === 'function'
+  const hasGetChat = typeof window.WWebJS?.getChat === 'function'
     const hasSendSeen = typeof window.WWebJS?.sendSeen === 'function'
     const hasSendMessage = typeof window.WWebJS?.sendMessage === 'function'
-    const ready = hasWidFactory && hasChat && hasGetChat && hasSendSeen && hasSendMessage
+  const hasMeGetter = typeof window.Store?.User?.getMaybeMeUser === 'function'
+  const ready = hasWidFactory && hasChat && hasGetChat && hasSendSeen && hasSendMessage && hasMeGetter
         if (ready) return true
         if (Date.now() - start > timeoutMs) return false
         await new Promise(r => setTimeout(r, 100))
