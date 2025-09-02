@@ -73,10 +73,17 @@ const sendMessage = async (req, res) => {
     try {
       const { ensurePageHelpers, ensureWWebReady } = require('../sessions')
       await ensurePageHelpers(client)
-      await ensureWWebReady(client, 5000)
+      const ready = await ensureWWebReady(client, 5000)
+      if (!ready) {
+        return sendErrorResponse(res, 503, 'Client page not ready. Please retry shortly.')
+      }
     } catch (_) { }
     const sendOptions = { waitUntilMsgSent: true, ...options }
 
+    // Basic body validation to avoid JSON parse-related issues and bad inputs
+    if (!chatId || !contentType) {
+      return sendErrorResponse(res, 400, 'chatId and contentType are required')
+    }
     let messageOut
     switch (contentType) {
       case 'string':

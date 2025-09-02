@@ -645,17 +645,18 @@ const ensurePageHelpers = async (client) => {
 // Wait until the browser context has Store.WidFactory and WWebJS.getChat available
 const ensureWWebReady = async (client, timeoutMs = 5000) => {
   try {
-    if (!client?.pupPage) return
-    await client.pupPage.evaluate(async (timeoutMs) => {
+    if (!client?.pupPage) return false
+    const result = await client.pupPage.evaluate(async (timeoutMs) => {
       const start = Date.now()
       while (true) {
-        const ready = !!(window.Store?.WidFactory?.createWid && window.WWebJS?.getChat)
+        const ready = !!(window.Store?.WidFactory?.createWid && typeof window.WWebJS?.getChat === 'function')
         if (ready) return true
         if (Date.now() - start > timeoutMs) return false
         await new Promise(r => setTimeout(r, 100))
       }
     }, timeoutMs)
-  } catch (_) { }
+    return !!result
+  } catch (_) { return false }
 }
 
 const destroySession = async (sessionId) => {
