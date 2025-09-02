@@ -44,10 +44,18 @@ const isEventEnabled = (event) => {
 
 const sendMessageSeenStatus = async (message) => {
   try {
+    if (!message || typeof message.getChat !== 'function') {
+      logger.warn({ messagePresent: !!message }, 'Cannot send seen status: message or getChat is undefined')
+      return
+    }
     const chat = await message.getChat()
+    if (!chat || typeof chat.sendSeen !== 'function') {
+      logger.warn({ hasChat: !!chat }, 'Cannot send seen status: chat or sendSeen is undefined')
+      return
+    }
     await chat.sendSeen()
   } catch (error) {
-    logger.error(error, 'Failed to send seen status')
+    logger.error({ err: error }, 'Failed to send seen status')
   }
 }
 

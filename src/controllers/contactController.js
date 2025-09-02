@@ -111,9 +111,22 @@ const getChat = async (req, res) => {
   try {
     const { contactId } = req.body
     const client = sessions.get(req.params.sessionId)
+    if (!client) {
+      sendErrorResponse(res, 404, 'Client not found')
+      return
+    }
+    if (!contactId) {
+      sendErrorResponse(res, 400, 'contactId is required')
+      return
+    }
     const contact = await client.getContactById(contactId)
     if (!contact) {
-      throw new Error('Contact not found')
+      sendErrorResponse(res, 404, 'Contact not found')
+      return
+    }
+    if (typeof contact.getChat !== 'function') {
+      sendErrorResponse(res, 500, 'getChat method not available on contact')
+      return
     }
     const result = await contact.getChat()
     res.json({ success: true, result })

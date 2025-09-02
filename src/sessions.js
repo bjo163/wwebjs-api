@@ -181,7 +181,13 @@ const setupSession = async (sessionId) => {
       // hotfix for https://github.com/pedroslopez/whatsapp-web.js/pull/3703
       client.once('ready', () => {
         client.pupPage.evaluate(() => {
-          window.Store.FindOrCreateChat = window.require('WAWebFindChatAction')
+          try {
+            window.Store.FindOrCreateChat = window.require('WAWebFindChatAction')
+          } catch (e) {
+            // no-op; fallback to existing FindOrCreateChat if available
+          }
+          // Ensure namespace exists
+          window.WWebJS = window.WWebJS || {}
           window.WWebJS.getChat = async (chatId, { getAsModel = true } = {}) => {
             const isChannel = /@\w*newsletter\b/.test(chatId)
             const chatWid = window.Store.WidFactory.createWid(chatId)
@@ -205,7 +211,7 @@ const setupSession = async (sessionId) => {
               ? await window.WWebJS.getChatModel(chat, { isChannel })
               : chat
           }
-        })
+        }).catch(() => { })
       })
     } catch (error) {
       logger.error({ sessionId, err: error }, 'Initialize error')
@@ -348,7 +354,8 @@ const initializeEvents = (client, sessionId) => {
         }
       }
     }
-    if (setMessagesAsSeen) {
+    // Only mark as seen for incoming messages to avoid unnecessary eval on outgoing
+    if (setMessagesAsSeen && message && !message.fromMe) {
       // small delay to ensure the message is processed before sending seen status
       await sleep(1000)
       sendMessageSeenStatus(message)
