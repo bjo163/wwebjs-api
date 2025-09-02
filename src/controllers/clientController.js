@@ -71,8 +71,9 @@ const sendMessage = async (req, res) => {
     }
     // try to ensure browser-side helpers are injected to avoid getChat undefined during send
     try {
-      const { ensurePageHelpers } = require('../sessions')
+      const { ensurePageHelpers, ensureWWebReady } = require('../sessions')
       await ensurePageHelpers(client)
+      await ensureWWebReady(client, 5000)
     } catch (_) { }
     const sendOptions = { waitUntilMsgSent: true, ...options }
 

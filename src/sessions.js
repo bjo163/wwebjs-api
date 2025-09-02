@@ -177,7 +177,7 @@ const setupSession = async (sessionId) => {
     }
 
     // helper to inject WWebJS.getChat safely
-    const injectGetChat = () => client.pupPage?.evaluate(() => {
+  const injectGetChat = () => client.pupPage?.evaluate(() => {
       try {
         window.Store.FindOrCreateChat = window.require('WAWebFindChatAction')
       } catch (e) {
@@ -208,34 +208,36 @@ const setupSession = async (sessionId) => {
           }
         }
       } catch (_) { }
-      window.WWebJS.getChat = async (chatId, { getAsModel = true } = {}) => {
-        const isChannel = /@\w*newsletter\b/.test(chatId)
-        const chatWid = window.Store.WidFactory.createWid(chatId)
-        let chat
+      if (!window.WWebJS.getChat && window.Store?.WidFactory?.createWid) {
+        window.WWebJS.getChat = async (chatId, { getAsModel = true } = {}) => {
+          const isChannel = /@\w*newsletter\b/.test(chatId)
+          const chatWid = window.Store.WidFactory.createWid(chatId)
+          let chat
 
-        if (isChannel) {
-          try {
-            chat = window.Store.NewsletterCollection.get(chatId)
-            if (!chat) {
-              await window.Store.ChannelUtils.loadNewsletterPreviewChat(chatId)
-              chat = await window.Store.NewsletterCollection.find(chatWid)
+          if (isChannel) {
+            try {
+              chat = window.Store.NewsletterCollection.get(chatId)
+              if (!chat) {
+                await window.Store.ChannelUtils.loadNewsletterPreviewChat(chatId)
+                chat = await window.Store.NewsletterCollection.find(chatWid)
+              }
+            } catch (err) {
+              chat = null
             }
-          } catch (err) {
-            chat = null
+          } else {
+            chat = window.Store.Chat.get(chatWid) || (await window.Store.FindOrCreateChat.findOrCreateLatestChat(chatWid))?.chat
           }
-        } else {
-          chat = window.Store.Chat.get(chatWid) || (await window.Store.FindOrCreateChat.findOrCreateLatestChat(chatWid))?.chat
-        }
 
-        return getAsModel && chat && window.WWebJS.getChatModel
-          ? await window.WWebJS.getChatModel(chat, { isChannel })
-          : chat
+          return getAsModel && chat && window.WWebJS.getChatModel
+            ? await window.WWebJS.getChatModel(chat, { isChannel })
+            : chat
+        }
       }
-      if (!window.WWebJS.sendSeen) {
+  if (!window.WWebJS.sendSeen && window.Store?.SendSeen?.sendSeen) {
         window.WWebJS.sendSeen = async (chatId) => {
           try {
             const chat = await window.WWebJS.getChat(chatId, { getAsModel: false })
-            if (!chat || !window.Store?.SendSeen?.sendSeen) return false
+    if (!chat || !window.Store?.SendSeen?.sendSeen) return false
             await window.Store.SendSeen.sendSeen(chat)
             return true
           } catch (_) {
@@ -573,7 +575,7 @@ const reloadSession = async (sessionId) => {
 const ensurePageHelpers = async (client) => {
   try {
     if (!client?.pupPage) return
-    await client.pupPage.evaluate(() => {
+  await client.pupPage.evaluate(() => {
       try {
         window.Store.FindOrCreateChat = window.require('WAWebFindChatAction')
       } catch (e) {
@@ -601,7 +603,7 @@ const ensurePageHelpers = async (client) => {
           }
         }
       } catch (_) { }
-      if (!window.WWebJS.getChat) {
+  if (!window.WWebJS.getChat && window.Store?.WidFactory?.createWid) {
         window.WWebJS.getChat = async (chatId, { getAsModel = true } = {}) => {
           const isChannel = /@\w*newsletter\b/.test(chatId)
           const chatWid = window.Store.WidFactory.createWid(chatId)
@@ -619,16 +621,16 @@ const ensurePageHelpers = async (client) => {
           } else {
             chat = window.Store.Chat.get(chatWid) || (await window.Store.FindOrCreateChat.findOrCreateLatestChat(chatWid))?.chat
           }
-          return getAsModel && chat && window.WWebJS.getChatModel
-            ? await window.WWebJS.getChatModel(chat, { isChannel })
-            : chat
+      return getAsModel && chat && window.WWebJS.getChatModel
+    ? await window.WWebJS.getChatModel(chat, { isChannel })
+    : chat
         }
       }
-      if (!window.WWebJS.sendSeen) {
+  if (!window.WWebJS.sendSeen && window.Store?.SendSeen?.sendSeen) {
         window.WWebJS.sendSeen = async (chatId) => {
           try {
             const chat = await window.WWebJS.getChat(chatId, { getAsModel: false })
-            if (!chat || !window.Store?.SendSeen?.sendSeen) return false
+    if (!chat || !window.Store?.SendSeen?.sendSeen) return false
             await window.Store.SendSeen.sendSeen(chat)
             return true
           } catch (_) {
@@ -637,6 +639,22 @@ const ensurePageHelpers = async (client) => {
         }
       }
     }).catch(() => { })
+  } catch (_) { }
+}
+
+// Wait until the browser context has Store.WidFactory and WWebJS.getChat available
+const ensureWWebReady = async (client, timeoutMs = 5000) => {
+  try {
+    if (!client?.pupPage) return
+    await client.pupPage.evaluate(async (timeoutMs) => {
+      const start = Date.now()
+      while (true) {
+        const ready = !!(window.Store?.WidFactory?.createWid && window.WWebJS?.getChat)
+        if (ready) return true
+        if (Date.now() - start > timeoutMs) return false
+        await new Promise(r => setTimeout(r, 100))
+      }
+    }, timeoutMs)
   } catch (_) { }
 }
 
@@ -735,5 +753,6 @@ module.exports = {
   reloadSession,
   flushSessions,
   destroySession,
-  ensurePageHelpers
+  ensurePageHelpers,
+  ensureWWebReady
 }
