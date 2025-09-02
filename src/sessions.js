@@ -245,13 +245,16 @@ const setupSession = async (sessionId) => {
             : chat
         }
       }
-  if (!window.WWebJS.sendSeen && window.Store?.SendSeen?.sendSeen) {
+  if (!window.WWebJS.sendSeen) {
         window.WWebJS.sendSeen = async (chatId) => {
           try {
-            const chat = await window.WWebJS.getChat(chatId, { getAsModel: false })
-    if (!chat || !window.Store?.SendSeen?.sendSeen) return false
-            await window.Store.SendSeen.sendSeen(chat)
-            return true
+            const chat = await window.WWebJS.getChat?.(chatId, { getAsModel: false })
+            if (!chat) return false
+            if (window.Store?.SendSeen?.sendSeen) {
+              await window.Store.SendSeen.sendSeen(chat)
+              return true
+            }
+            return false
           } catch (_) {
             return false
           }
@@ -649,13 +652,16 @@ const ensurePageHelpers = async (client) => {
     : chat
         }
       }
-  if (!window.WWebJS.sendSeen && window.Store?.SendSeen?.sendSeen) {
+  if (!window.WWebJS.sendSeen) {
         window.WWebJS.sendSeen = async (chatId) => {
           try {
-            const chat = await window.WWebJS.getChat(chatId, { getAsModel: false })
-    if (!chat || !window.Store?.SendSeen?.sendSeen) return false
-            await window.Store.SendSeen.sendSeen(chat)
-            return true
+            const chat = await window.WWebJS.getChat?.(chatId, { getAsModel: false })
+            if (!chat) return false
+            if (window.Store?.SendSeen?.sendSeen) {
+              await window.Store.SendSeen.sendSeen(chat)
+              return true
+            }
+            return false
           } catch (_) {
             return false
           }
@@ -675,8 +681,9 @@ const ensureWWebReady = async (client, timeoutMs = 5000) => {
     // Require WidFactory, Chat collection, and a working getChat helper
     const hasWidFactory = !!window.Store?.WidFactory?.createWid
     const hasChat = !!(window.Store?.Chat && (window.Store.Chat.get || window.Store.Chat.find))
-    const hasGetChat = typeof window.WWebJS?.getChat === 'function'
-    const ready = hasWidFactory && hasChat && hasGetChat
+  const hasGetChat = typeof window.WWebJS?.getChat === 'function'
+  const hasSendSeen = typeof window.WWebJS?.sendSeen === 'function'
+  const ready = hasWidFactory && hasChat && hasGetChat && hasSendSeen
         if (ready) return true
         if (Date.now() - start > timeoutMs) return false
         await new Promise(r => setTimeout(r, 100))
