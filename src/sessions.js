@@ -186,6 +186,19 @@ const setupSession = async (sessionId) => {
       // Ensure namespace exists
       window.WWebJS = window.WWebJS || {}
       window.Store = window.Store || {}
+      // Shim AppState access between Store and AuthStore, and provide safe default
+      try {
+        window.AuthStore = window.AuthStore || {}
+        if (!window.Store.AppState && window.AuthStore?.AppState) {
+          window.Store.AppState = window.AuthStore.AppState
+        }
+        if (!window.AuthStore.AppState && window.Store?.AppState) {
+          window.AuthStore.AppState = window.Store.AppState
+        }
+        if (!window.Store.AppState) {
+          window.Store.AppState = { state: 'UNKNOWN' }
+        }
+      } catch (_) { }
       // Ensure Store.SendSeen exists
       try {
         if (!window.Store.SendSeen && window.mR?.findModule) {
@@ -568,6 +581,18 @@ const ensurePageHelpers = async (client) => {
       }
       window.WWebJS = window.WWebJS || {}
       window.Store = window.Store || {}
+      try {
+        window.AuthStore = window.AuthStore || {}
+        if (!window.Store.AppState && window.AuthStore?.AppState) {
+          window.Store.AppState = window.AuthStore.AppState
+        }
+        if (!window.AuthStore.AppState && window.Store?.AppState) {
+          window.AuthStore.AppState = window.Store.AppState
+        }
+        if (!window.Store.AppState) {
+          window.Store.AppState = { state: 'UNKNOWN' }
+        }
+      } catch (_) { }
       try {
         if (!window.Store.SendSeen && window.mR?.findModule) {
           const mod = window.mR.findModule('sendSeen')
