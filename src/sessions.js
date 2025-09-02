@@ -702,6 +702,33 @@ const ensurePageHelpers = async (client) => {
   } catch (_) { }
 }
 
+// Ensure Store.User has getMaybeMeUser/getMaybeMeLidUser available
+const ensureWWebUser = async (client) => {
+  try {
+    if (!client?.pupPage) return false
+    return await client.pupPage.evaluate(() => {
+      try {
+        if (!window.Store) window.Store = {}
+        if (!window.Store.User || typeof window.Store.User.getMaybeMeUser !== 'function' || typeof window.Store.User.getMaybeMeLidUser !== 'function') {
+          try {
+            const mod = window.require && window.require('WAWebUserPrefsMeUser')
+            if (mod) window.Store.User = mod
+          } catch (_) {}
+          if (!window.Store.User || typeof window.Store.User.getMaybeMeUser !== 'function') {
+            try {
+              if (window.mR?.findModule) {
+                const arr = window.mR.findModule('getMaybeMeUser')
+                if (Array.isArray(arr) && arr[0]) window.Store.User = arr[0]
+              }
+            } catch (_) {}
+          }
+        }
+      } catch (_) {}
+      return !!(window.Store?.User && typeof window.Store.User.getMaybeMeUser === 'function' && typeof window.Store.User.getMaybeMeLidUser === 'function')
+    })
+  } catch (_) { return false }
+}
+
 // Wait until the browser context has Store.WidFactory and WWebJS.getChat available
 const ensureWWebReady = async (client, timeoutMs = 5000) => {
   try {
@@ -711,9 +738,25 @@ const ensureWWebReady = async (client, timeoutMs = 5000) => {
       if (ExposeStore) await client.pupPage.evaluate(ExposeStore)
       if (LoadUtils) await client.pupPage.evaluate(LoadUtils)
     } catch (_) { }
-  const result = await client.pupPage.evaluate(async (timeoutMs) => {
+    const result = await client.pupPage.evaluate(async (timeoutMs) => {
       const start = Date.now()
       while (true) {
+        try {
+          if (!window.Store?.User || typeof window.Store.User.getMaybeMeUser !== 'function' || typeof window.Store.User.getMaybeMeLidUser !== 'function') {
+            try {
+              const mod = window.require && window.require('WAWebUserPrefsMeUser')
+              if (mod) window.Store.User = mod
+            } catch (_) {}
+            if (!window.Store.User || typeof window.Store.User.getMaybeMeUser !== 'function') {
+              try {
+                if (window.mR?.findModule) {
+                  const arr = window.mR.findModule('getMaybeMeUser')
+                  if (Array.isArray(arr) && arr[0]) window.Store.User = arr[0]
+                }
+              } catch (_) {}
+            }
+          }
+        } catch (_) {}
     // Require WidFactory, Chat collection, and a working getChat helper
     const hasWidFactory = !!window.Store?.WidFactory?.createWid
     const hasChat = !!(window.Store?.Chat && (window.Store.Chat.get || window.Store.Chat.find))
@@ -827,5 +870,6 @@ module.exports = {
   flushSessions,
   destroySession,
   ensurePageHelpers,
-  ensureWWebReady
+  ensureWWebReady,
+  ensureWWebUser
 }

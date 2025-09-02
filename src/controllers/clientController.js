@@ -70,10 +70,11 @@ const sendMessage = async (req, res) => {
       return sendErrorResponse(res, 404, 'Client not found')
     }
     // try to ensure browser-side helpers are injected to avoid getChat undefined during send
-    try {
-  const { ensurePageHelpers, ensureWWebReady } = require('../sessions')
-      await ensurePageHelpers(client)
-  const ready = await ensureWWebReady(client, 10000)
+  try {
+  const { ensurePageHelpers, ensureWWebReady, ensureWWebUser } = require('../sessions')
+    await ensurePageHelpers(client)
+    await ensureWWebUser(client)
+  const ready = await ensureWWebReady(client, 15000)
       if (!ready) {
         return sendErrorResponse(res, 503, 'Client page not ready. Please retry shortly.')
       }
