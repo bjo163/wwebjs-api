@@ -1,4 +1,10 @@
 const { Client, LocalAuth } = require('whatsapp-web.js')
+// Pull official injected helpers to force-load when needed
+let ExposeStore, LoadUtils
+try {
+  ({ ExposeStore } = require('whatsapp-web.js/src/util/Injected/Store'))
+  ;({ LoadUtils } = require('whatsapp-web.js/src/util/Injected/Utils'))
+} catch (_) { /* optional; fallback to our light shims */ }
 const fs = require('fs')
 const path = require('path')
 const sessions = new Map()
@@ -268,6 +274,11 @@ const setupSession = async (sessionId) => {
       await client.initialize()
       // also inject immediately (idempotent) in case ready already fired
       await injectGetChat()
+      // Proactively load official Store/Utils if not yet injected by the library
+      try {
+        if (ExposeStore) await client.pupPage?.evaluate(ExposeStore)
+        if (LoadUtils) await client.pupPage?.evaluate(LoadUtils)
+      } catch (_) { }
     } catch (error) {
       logger.error({ sessionId, err: error }, 'Initialize error')
       throw error
@@ -590,6 +601,11 @@ const reloadSession = async (sessionId) => {
 const ensurePageHelpers = async (client) => {
   try {
     if (!client?.pupPage) return
+    // Try to load the official Store/Utils first; ignore errors (will be retried)
+    try {
+      if (ExposeStore) await client.pupPage.evaluate(ExposeStore)
+      if (LoadUtils) await client.pupPage.evaluate(LoadUtils)
+    } catch (_) { }
     await client.pupPage.evaluate(() => {
       try {
         window.Store.FindOrCreateChat = window.require('WAWebFindChatAction')
@@ -675,6 +691,11 @@ const ensurePageHelpers = async (client) => {
 const ensureWWebReady = async (client, timeoutMs = 5000) => {
   try {
     if (!client?.pupPage) return false
+    // Attempt to inject official Store/Utils before waiting
+    try {
+      if (ExposeStore) await client.pupPage.evaluate(ExposeStore)
+      if (LoadUtils) await client.pupPage.evaluate(LoadUtils)
+    } catch (_) { }
   const result = await client.pupPage.evaluate(async (timeoutMs) => {
       const start = Date.now()
       while (true) {
