@@ -681,9 +681,10 @@ const ensureWWebReady = async (client, timeoutMs = 5000) => {
     // Require WidFactory, Chat collection, and a working getChat helper
     const hasWidFactory = !!window.Store?.WidFactory?.createWid
     const hasChat = !!(window.Store?.Chat && (window.Store.Chat.get || window.Store.Chat.find))
-  const hasGetChat = typeof window.WWebJS?.getChat === 'function'
-  const hasSendSeen = typeof window.WWebJS?.sendSeen === 'function'
-  const ready = hasWidFactory && hasChat && hasGetChat && hasSendSeen
+    const hasGetChat = typeof window.WWebJS?.getChat === 'function'
+    const hasSendSeen = typeof window.WWebJS?.sendSeen === 'function'
+    const hasSendMessage = typeof window.WWebJS?.sendMessage === 'function'
+    const ready = hasWidFactory && hasChat && hasGetChat && hasSendSeen && hasSendMessage
         if (ready) return true
         if (Date.now() - start > timeoutMs) return false
         await new Promise(r => setTimeout(r, 100))
