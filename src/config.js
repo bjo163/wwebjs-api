@@ -26,7 +26,8 @@ const logIncomingBodies = process.env.LOG_INCOMING_BODIES ? (process.env.LOG_INC
 const webhookTimeoutMs = parseInt(process.env.WEBHOOK_TIMEOUT_MS) || 7000
 const webhookMaxRetries = parseInt(process.env.WEBHOOK_MAX_RETRIES) || 3
 // If true, the 'message' event will also be emitted for messages sent by this client
-const emitSelf = process.env.EMIT_SELF ? (process.env.EMIT_SELF).toLowerCase() === 'true' : false
+// Emit 'message' for self-sent messages too (default true so sending via API is also logged)
+const emitSelf = process.env.EMIT_SELF ? (process.env.EMIT_SELF).toLowerCase() === 'true' : true
 
 module.exports = {
   sessionFolderPath,

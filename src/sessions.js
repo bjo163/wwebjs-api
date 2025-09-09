@@ -363,6 +363,7 @@ const initializeEvents = (client, sessionId) => {
 
   if (isEventEnabled('auth_failure')) {
     client.on('auth_failure', (msg) => {
+  try { logger.warn({ sessionId, msg }, 'Auth failure') } catch (_) {}
   ;(async () => { try { await triggerWebhook(sessionWebhook, sessionId, 'status', { msg }) } catch (_) {} })()
       triggerWebSocket(sessionId, 'status', { msg })
     })
@@ -386,6 +387,7 @@ const initializeEvents = (client, sessionId) => {
   if (isEventEnabled('authenticated')) {
     client.qr = null
     client.on('authenticated', () => {
+  try { logger.info({ sessionId }, 'Authenticated') } catch (_) {}
   ;(async () => { try { await triggerWebhook(sessionWebhook, sessionId, 'authenticated') } catch (_) {} })()
       triggerWebSocket(sessionId, 'authenticated')
     })
@@ -393,6 +395,7 @@ const initializeEvents = (client, sessionId) => {
 
   if (isEventEnabled('call')) {
     client.on('call', (call) => {
+  try { logger.info({ sessionId, id: call?._serialized || call?.id, isGroup: !!call?.isGroup, isVideo: !!call?.isVideo }, 'Incoming call event') } catch (_) {}
   ;(async () => { try { await triggerWebhook(sessionWebhook, sessionId, 'call', { call }) } catch (_) {} })()
       triggerWebSocket(sessionId, 'call', { call })
     })
@@ -400,6 +403,7 @@ const initializeEvents = (client, sessionId) => {
 
   if (isEventEnabled('change_state')) {
     client.on('change_state', state => {
+  try { logger.info({ sessionId, state }, 'State changed') } catch (_) {}
   ;(async () => { try { await triggerWebhook(sessionWebhook, sessionId, 'change_state', { state }) } catch (_) {} })()
       triggerWebSocket(sessionId, 'change_state', { state })
     })
@@ -407,6 +411,7 @@ const initializeEvents = (client, sessionId) => {
 
   if (isEventEnabled('disconnected')) {
     client.on('disconnected', (reason) => {
+  try { logger.warn({ sessionId, reason }, 'Disconnected') } catch (_) {}
   ;(async () => { try { await triggerWebhook(sessionWebhook, sessionId, 'disconnected', { reason }) } catch (_) {} })()
       triggerWebSocket(sessionId, 'disconnected', { reason })
     })
@@ -414,6 +419,7 @@ const initializeEvents = (client, sessionId) => {
 
   if (isEventEnabled('group_join')) {
     client.on('group_join', (notification) => {
+  try { logger.info({ sessionId, chatId: notification?.id?.remote }, 'Group join') } catch (_) {}
   ;(async () => { try { await triggerWebhook(sessionWebhook, sessionId, 'group_join', { notification }) } catch (_) {} })()
       triggerWebSocket(sessionId, 'group_join', { notification })
     })
@@ -421,6 +427,7 @@ const initializeEvents = (client, sessionId) => {
 
   if (isEventEnabled('group_leave')) {
     client.on('group_leave', (notification) => {
+  try { logger.info({ sessionId, chatId: notification?.id?.remote }, 'Group leave') } catch (_) {}
   ;(async () => { try { await triggerWebhook(sessionWebhook, sessionId, 'group_leave', { notification }) } catch (_) {} })()
       triggerWebSocket(sessionId, 'group_leave', { notification })
     })
@@ -428,6 +435,7 @@ const initializeEvents = (client, sessionId) => {
 
   if (isEventEnabled('group_admin_changed')) {
     client.on('group_admin_changed', (notification) => {
+  try { logger.info({ sessionId, chatId: notification?.id?.remote }, 'Group admin changed') } catch (_) {}
   ;(async () => { try { await triggerWebhook(sessionWebhook, sessionId, 'group_admin_changed', { notification }) } catch (_) {} })()
       triggerWebSocket(sessionId, 'group_admin_changed', { notification })
     })
@@ -435,6 +443,7 @@ const initializeEvents = (client, sessionId) => {
 
   if (isEventEnabled('group_membership_request')) {
     client.on('group_membership_request', (notification) => {
+  try { logger.info({ sessionId, chatId: notification?.id?.remote }, 'Group membership request') } catch (_) {}
   ;(async () => { try { await triggerWebhook(sessionWebhook, sessionId, 'group_membership_request', { notification }) } catch (_) {} })()
       triggerWebSocket(sessionId, 'group_membership_request', { notification })
     })
@@ -442,6 +451,7 @@ const initializeEvents = (client, sessionId) => {
 
   if (isEventEnabled('group_update')) {
     client.on('group_update', (notification) => {
+  try { logger.info({ sessionId, chatId: notification?.id?.remote }, 'Group update') } catch (_) {}
   ;(async () => { try { await triggerWebhook(sessionWebhook, sessionId, 'group_update', { notification }) } catch (_) {} })()
       triggerWebSocket(sessionId, 'group_update', { notification })
     })
@@ -449,6 +459,7 @@ const initializeEvents = (client, sessionId) => {
 
   if (isEventEnabled('loading_screen')) {
     client.on('loading_screen', (percent, message) => {
+  try { logger.info({ sessionId, percent, message }, 'Loading screen') } catch (_) {}
   ;(async () => { try { await triggerWebhook(sessionWebhook, sessionId, 'loading_screen', { percent, message }) } catch (_) {} })()
       triggerWebSocket(sessionId, 'loading_screen', { percent, message })
     })
@@ -456,6 +467,7 @@ const initializeEvents = (client, sessionId) => {
 
   if (isEventEnabled('media_uploaded')) {
     client.on('media_uploaded', (message) => {
+  try { logger.info({ sessionId, id: message?.id?._serialized }, 'Media uploaded') } catch (_) {}
   ;(async () => { try { await triggerWebhook(sessionWebhook, sessionId, 'media_uploaded', { message }) } catch (_) {} })()
       triggerWebSocket(sessionId, 'media_uploaded', { message })
     })
@@ -500,6 +512,7 @@ const initializeEvents = (client, sessionId) => {
 
   if (isEventEnabled('message_ack')) {
     client.on('message_ack', (message, ack) => {
+  try { logger.info({ sessionId, id: message?.id?._serialized, ack }, 'Message ack') } catch (_) {}
   ;(async () => { try { await triggerWebhook(sessionWebhook, sessionId, 'message_ack', { message, ack }) } catch (_) {} })()
       triggerWebSocket(sessionId, 'message_ack', { message, ack })
     })
@@ -529,6 +542,7 @@ const initializeEvents = (client, sessionId) => {
 
   if (isEventEnabled('message_reaction')) {
     client.on('message_reaction', (reaction) => {
+  try { logger.info({ sessionId, id: reaction?.msgKey?._serialized, emoji: reaction?.reaction || reaction?.text }, 'Message reaction') } catch (_) {}
   ;(async () => { try { await triggerWebhook(sessionWebhook, sessionId, 'message_reaction', { reaction }) } catch (_) {} })()
       triggerWebSocket(sessionId, 'message_reaction', { reaction })
     })
@@ -536,6 +550,7 @@ const initializeEvents = (client, sessionId) => {
 
   if (isEventEnabled('message_edit')) {
     client.on('message_edit', (message, newBody, prevBody) => {
+  try { logger.info({ sessionId, id: message?.id?._serialized, newLen: (newBody||'').length, prevLen: (prevBody||'').length }, 'Message edit') } catch (_) {}
       ;(async () => { try { await triggerWebhook(sessionWebhook, sessionId, 'message_edit', { message, newBody, prevBody }) } catch (_) {} })()
       triggerWebSocket(sessionId, 'message_edit', { message, newBody, prevBody })
     })
@@ -543,6 +558,7 @@ const initializeEvents = (client, sessionId) => {
 
   if (isEventEnabled('message_ciphertext')) {
     client.on('message_ciphertext', (message) => {
+  try { logger.info({ sessionId, id: message?.id?._serialized }, 'Message ciphertext') } catch (_) {}
   ;(async () => { try { await triggerWebhook(sessionWebhook, sessionId, 'message_ciphertext', { message }) } catch (_) {} })()
       triggerWebSocket(sessionId, 'message_ciphertext', { message })
     })
@@ -550,6 +566,7 @@ const initializeEvents = (client, sessionId) => {
 
   if (isEventEnabled('message_revoke_everyone')) {
     client.on('message_revoke_everyone', (message) => {
+  try { logger.info({ sessionId, id: message?.id?._serialized }, 'Message revoke everyone') } catch (_) {}
   ;(async () => { try { await triggerWebhook(sessionWebhook, sessionId, 'message_revoke_everyone', { message }) } catch (_) {} })()
       triggerWebSocket(sessionId, 'message_revoke_everyone', { message })
     })
@@ -557,6 +574,7 @@ const initializeEvents = (client, sessionId) => {
 
   if (isEventEnabled('message_revoke_me')) {
     client.on('message_revoke_me', (message, revokedMsg) => {
+  try { logger.info({ sessionId, id: message?.id?._serialized, revokedId: revokedMsg?.id?._serialized }, 'Message revoke me') } catch (_) {}
   ;(async () => { try { await triggerWebhook(sessionWebhook, sessionId, 'message_revoke_me', { message, revokedMsg }) } catch (_) {} })()
       triggerWebSocket(sessionId, 'message_revoke_me', { message, revokedMsg })
     })
@@ -576,6 +594,7 @@ const initializeEvents = (client, sessionId) => {
       }
     }, 30000)
     if (isEventEnabled('qr')) {
+  try { logger.info({ sessionId }, 'QR updated') } catch (_) {}
   ;(async () => { try { await triggerWebhook(sessionWebhook, sessionId, 'qr', { qr }) } catch (_) {} })()
       triggerWebSocket(sessionId, 'qr', { qr })
     }
@@ -583,6 +602,7 @@ const initializeEvents = (client, sessionId) => {
 
   if (isEventEnabled('ready')) {
     client.on('ready', () => {
+  try { logger.info({ sessionId }, 'Client ready') } catch (_) {}
   ;(async () => { try { await triggerWebhook(sessionWebhook, sessionId, 'ready') } catch (_) {} })()
       triggerWebSocket(sessionId, 'ready')
     })
@@ -590,6 +610,7 @@ const initializeEvents = (client, sessionId) => {
 
   if (isEventEnabled('contact_changed')) {
     client.on('contact_changed', (message, oldId, newId, isContact) => {
+  try { logger.info({ sessionId, oldId, newId, isContact }, 'Contact changed') } catch (_) {}
   ;(async () => { try { await triggerWebhook(sessionWebhook, sessionId, 'contact_changed', { message, oldId, newId, isContact }) } catch (_) {} })()
       triggerWebSocket(sessionId, 'contact_changed', { message, oldId, newId, isContact })
     })
@@ -597,6 +618,7 @@ const initializeEvents = (client, sessionId) => {
 
   if (isEventEnabled('chat_removed')) {
     client.on('chat_removed', (chat) => {
+  try { logger.info({ sessionId, id: chat?.id?._serialized }, 'Chat removed') } catch (_) {}
   ;(async () => { try { await triggerWebhook(sessionWebhook, sessionId, 'chat_removed', { chat }) } catch (_) {} })()
       triggerWebSocket(sessionId, 'chat_removed', { chat })
     })
@@ -604,6 +626,7 @@ const initializeEvents = (client, sessionId) => {
 
   if (isEventEnabled('chat_archived')) {
     client.on('chat_archived', (chat, currState, prevState) => {
+  try { logger.info({ sessionId, id: chat?.id?._serialized, currState, prevState }, 'Chat archived') } catch (_) {}
   ;(async () => { try { await triggerWebhook(sessionWebhook, sessionId, 'chat_archived', { chat, currState, prevState }) } catch (_) {} })()
       triggerWebSocket(sessionId, 'chat_archived', { chat, currState, prevState })
     })
@@ -611,6 +634,7 @@ const initializeEvents = (client, sessionId) => {
 
   if (isEventEnabled('unread_count')) {
     client.on('unread_count', (chat) => {
+  try { logger.info({ sessionId, id: chat?.id?._serialized, unreadCount: chat?.unreadCount }, 'Unread count') } catch (_) {}
   ;(async () => { try { await triggerWebhook(sessionWebhook, sessionId, 'unread_count', { chat }) } catch (_) {} })()
       triggerWebSocket(sessionId, 'unread_count', { chat })
     })
@@ -618,6 +642,7 @@ const initializeEvents = (client, sessionId) => {
 
   if (isEventEnabled('vote_update')) {
     client.on('vote_update', (vote) => {
+  try { logger.info({ sessionId, pollId: vote?.pollUpdateMessageKey?._serialized }, 'Vote update') } catch (_) {}
   ;(async () => { try { await triggerWebhook(sessionWebhook, sessionId, 'vote_update', { vote }) } catch (_) {} })()
       triggerWebSocket(sessionId, 'vote_update', { vote })
     })
@@ -625,6 +650,7 @@ const initializeEvents = (client, sessionId) => {
 
   if (isEventEnabled('code')) {
     client.on('code', (code) => {
+  try { logger.info({ sessionId }, '2FA code requested') } catch (_) {}
   ;(async () => { try { await triggerWebhook(sessionWebhook, sessionId, 'code', { code }) } catch (_) {} })()
       triggerWebSocket(sessionId, 'code', { code })
     })
