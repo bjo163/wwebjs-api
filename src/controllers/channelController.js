@@ -117,19 +117,31 @@ const sendMessage = async (req, res) => {
       sendErrorResponse(res, 400, 'The chat is not a channel')
       return
     }
+    const { logger } = require('../logger')
+    const logSend = async (phase, extra = {}) => {
+      try {
+        logger.info({ phase, chatId, contentType, hasOptions: !!options, optionsKeys: Object.keys(options || {}), ...extra }, 'Send channel message')
+      } catch (_) {}
+    }
     let messageOut
     switch (contentType) {
       case 'string':
+        await logSend('before', { bodyLen: typeof content === 'string' ? content.length : 0 })
         messageOut = await chat.sendMessage(content, sendOptions)
+        await logSend('after', { messageId: messageOut?.id?._serialized })
         break
       case 'MessageMediaFromURL': {
         const messageMediaFromURL = await MessageMedia.fromUrl(content, { unsafeMime: true, ...mediaFromURLOptions })
+        await logSend('before_media_url', { url: content })
         messageOut = await chat.sendMessage(messageMediaFromURL, sendOptions)
+        await logSend('after', { messageId: messageOut?.id?._serialized })
         break
       }
       case 'MessageMedia': {
         const messageMedia = new MessageMedia(content.mimetype, content.data, content.filename, content.filesize)
+        await logSend('before_media', { mimetype: content?.mimetype, size: content?.data?.length })
         messageOut = await chat.sendMessage(messageMedia, sendOptions)
+        await logSend('after', { messageId: messageOut?.id?._serialized })
         break
       }
       default:

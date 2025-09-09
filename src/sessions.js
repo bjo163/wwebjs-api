@@ -477,6 +477,21 @@ const initializeEvents = (client, sessionId) => {
 
   if (isEventEnabled('message_create')) {
     client.on('message_create', (message) => {
+      try {
+        const body = typeof message?.body === 'string' ? message.body : ''
+        const snippet = body.length > 200 ? body.slice(0, 200) + '…' : body
+        logger.info({
+          sessionId,
+          event: 'message_create',
+          fromMe: !!message?.fromMe,
+          id: message?.id?._serialized,
+          chatId: message?.from,
+          type: message?.type,
+          hasMedia: !!message?.hasMedia,
+          bodyLength: body.length || 0,
+          bodySnippet: snippet
+        }, 'Message create')
+      } catch (_) {}
   ;(async () => { try { await triggerWebhook(sessionWebhook, sessionId, 'message_create', { message }) } catch (_) {} })()
       triggerWebSocket(sessionId, 'message_create', { message })
     })
