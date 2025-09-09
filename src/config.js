@@ -25,6 +25,8 @@ const autoStartSessions = process.env.AUTO_START_SESSIONS ? (process.env.AUTO_ST
 const logIncomingBodies = process.env.LOG_INCOMING_BODIES ? (process.env.LOG_INCOMING_BODIES).toLowerCase() === 'true' : true
 const webhookTimeoutMs = parseInt(process.env.WEBHOOK_TIMEOUT_MS) || 7000
 const webhookMaxRetries = parseInt(process.env.WEBHOOK_MAX_RETRIES) || 3
+// If true, the 'message' event will also be emitted for messages sent by this client
+const emitSelf = process.env.EMIT_SELF ? (process.env.EMIT_SELF).toLowerCase() === 'true' : false
 
 module.exports = {
   sessionFolderPath,
@@ -50,4 +52,5 @@ module.exports = {
   ,webhookTimeoutMs
   ,webhookMaxRetries
   ,logIncomingBodies
+  ,emitSelf
 }

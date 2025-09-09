@@ -9,7 +9,7 @@ try {
 const fs = require('fs')
 const path = require('path')
 const sessions = new Map()
-const { baseWebhookURL, sessionFolderPath, maxAttachmentSize, setMessagesAsSeen, webVersion, webVersionCacheType, recoverSessions, chromeBin, headless, releaseBrowserLock } = require('./config')
+const { baseWebhookURL, sessionFolderPath, maxAttachmentSize, setMessagesAsSeen, webVersion, webVersionCacheType, recoverSessions, chromeBin, headless, releaseBrowserLock, emitSelf } = require('./config')
 const { triggerWebhook, waitForNestedObject, isEventEnabled, sendMessageSeenStatus, sleep } = require('./utils')
 const { logger } = require('./logger')
 const { initWebSocketServer, terminateWebSocketServer, triggerWebSocket } = require('./websocket')
@@ -103,7 +103,7 @@ const setupSession = async (sessionId) => {
     delete localAuth.logout
     localAuth.logout = () => { }
 
-    const clientOptions = {
+  const clientOptions = {
       puppeteer: {
         executablePath: chromeBin,
         headless,
@@ -147,8 +147,10 @@ const setupSession = async (sessionId) => {
           '--no-sandbox',
           '--disable-blink-features=AutomationControlled'
         ]
-      },
-      authStrategy: localAuth
+  },
+  authStrategy: localAuth,
+  // make sure 'message' event fires for self messages when requested
+  emitSelf
     }
 
     if (webVersion) {
