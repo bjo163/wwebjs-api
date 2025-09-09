@@ -22,7 +22,7 @@ const logLevel = process.env.LOG_LEVEL || 'info'
 const enableWebHook = process.env.ENABLE_WEBHOOK ? (process.env.ENABLE_WEBHOOK).toLowerCase() === 'true' : true
 const enableWebSocket = process.env.ENABLE_WEBSOCKET ? (process.env.ENABLE_WEBSOCKET).toLowerCase() === 'true' : false
 const autoStartSessions = process.env.AUTO_START_SESSIONS ? (process.env.AUTO_START_SESSIONS).toLowerCase() === 'true' : true
-const logIncomingBodies = (process.env.LOG_INCOMING_BODIES || '').toLowerCase() === 'true'
+const logIncomingBodies = process.env.LOG_INCOMING_BODIES ? (process.env.LOG_INCOMING_BODIES).toLowerCase() === 'true' : true
 const webhookTimeoutMs = parseInt(process.env.WEBHOOK_TIMEOUT_MS) || 7000
 const webhookMaxRetries = parseInt(process.env.WEBHOOK_MAX_RETRIES) || 3
 
