@@ -86,6 +86,12 @@ const sendMessage = async (req, res) => {
       return sendErrorResponse(res, 400, 'chatId and contentType are required')
     }
     let messageOut
+    const { logger } = require('../logger')
+    const logSend = async (phase, extra = {}) => {
+      try {
+        logger.info({ phase, chatId, contentType, hasOptions: !!options, optionsKeys: Object.keys(options || {}), ...extra }, 'Send message')
+      } catch (_) {}
+    }
     switch (contentType) {
       case 'string':
         if (sendOptions?.media) {
@@ -95,32 +101,44 @@ const sendMessage = async (req, res) => {
           }
           sendOptions.media = new MessageMedia(mimetype, data, filename, filesize)
         }
-        messageOut = await client.sendMessage(chatId, content, sendOptions)
+  await logSend('before', { bodyLen: typeof content === 'string' ? content.length : 0 })
+  messageOut = await client.sendMessage(chatId, content, sendOptions)
+  await logSend('after', { messageId: messageOut?.id?._serialized })
         break
       case 'MessageMediaFromURL': {
         const messageMediaFromURL = await MessageMedia.fromUrl(content, { unsafeMime: true, ...mediaFromURLOptions })
-        messageOut = await client.sendMessage(chatId, messageMediaFromURL, sendOptions)
+  await logSend('before_media_url', { url: content })
+  messageOut = await client.sendMessage(chatId, messageMediaFromURL, sendOptions)
+  await logSend('after', { messageId: messageOut?.id?._serialized })
         break
       }
       case 'MessageMedia': {
         const messageMedia = new MessageMedia(content.mimetype, content.data, content.filename, content.filesize)
-        messageOut = await client.sendMessage(chatId, messageMedia, sendOptions)
+  await logSend('before_media', { mimetype: content?.mimetype, size: content?.data?.length })
+  messageOut = await client.sendMessage(chatId, messageMedia, sendOptions)
+  await logSend('after', { messageId: messageOut?.id?._serialized })
         break
       }
       case 'Location': {
         const location = new Location(content.latitude, content.longitude, content.description)
-        messageOut = await client.sendMessage(chatId, location, sendOptions)
+  await logSend('before_location')
+  messageOut = await client.sendMessage(chatId, location, sendOptions)
+  await logSend('after', { messageId: messageOut?.id?._serialized })
         break
       }
       case 'Contact': {
         const contactId = content.contactId.endsWith('@c.us') ? content.contactId : `${content.contactId}@c.us`
         const contact = await client.getContactById(contactId)
-        messageOut = await client.sendMessage(chatId, contact, sendOptions)
+  await logSend('before_contact', { contactId })
+  messageOut = await client.sendMessage(chatId, contact, sendOptions)
+  await logSend('after', { messageId: messageOut?.id?._serialized })
         break
       }
       case 'Poll': {
         const poll = new Poll(content.pollName, content.pollOptions, content.options)
-        messageOut = await client.sendMessage(chatId, poll, sendOptions)
+  await logSend('before_poll', { pollName: content?.pollName, optionsCount: (content?.pollOptions || []).length })
+  messageOut = await client.sendMessage(chatId, poll, sendOptions)
+  await logSend('after', { messageId: messageOut?.id?._serialized })
         break
       }
       default:

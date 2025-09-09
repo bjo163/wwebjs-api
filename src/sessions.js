@@ -491,7 +491,7 @@ const initializeEvents = (client, sessionId) => {
 
   if (isEventEnabled('message_edit')) {
     client.on('message_edit', (message, newBody, prevBody) => {
-  ;(async () => { try { await triggerWebhook(sessionWebhook, sessionId, 'message_edit', { message, newBody, prevBody }) } catch (_) {} })()
+      ;(async () => { try { await triggerWebhook(sessionWebhook, sessionId, 'message_edit', { message, newBody, prevBody }) } catch (_) {} })()
       triggerWebSocket(sessionId, 'message_edit', { message, newBody, prevBody })
     })
   }
