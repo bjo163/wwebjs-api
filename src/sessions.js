@@ -366,6 +366,21 @@ const initializeEvents = (client, sessionId) => {
     })
   }
 
+    // Log enabled/disabled events snapshot for diagnostics
+    try {
+      logger.info({
+        sessionId,
+        events: {
+          message: isEventEnabled('message'),
+          message_create: isEventEnabled('message_create'),
+          message_ack: isEventEnabled('message_ack'),
+          message_reaction: isEventEnabled('message_reaction'),
+          message_edit: isEventEnabled('message_edit'),
+          message_ciphertext: isEventEnabled('message_ciphertext')
+        }
+      }, 'Events enabled state')
+    } catch (_) {}
+
   if (isEventEnabled('authenticated')) {
     client.qr = null
     client.on('authenticated', () => {
@@ -445,6 +460,19 @@ const initializeEvents = (client, sessionId) => {
   }
 
   client.on('message', async (message) => {
+    try {
+      const { logIncomingBodies } = require('./config')
+      logger.info({
+        sessionId,
+        event: 'message',
+        fromMe: !!message?.fromMe,
+        id: message?.id?._serialized,
+        chatId: message?.from,
+        type: message?.type,
+        hasMedia: !!message?.hasMedia,
+        body: logIncomingBodies ? (typeof message?.body === 'string' ? message.body : '') : undefined
+      }, 'Message event fired')
+    } catch (_) {}
     if (isEventEnabled('message')) {
   ;(async () => { try { await triggerWebhook(sessionWebhook, sessionId, 'message', { message }) } catch (_) {} })()
       triggerWebSocket(sessionId, 'message', { message })
@@ -627,7 +655,7 @@ const reloadSession = async (sessionId) => {
   try {
     const client = sessions.get(sessionId)
     if (!client) {
-      return
+  return
     }
     client.pupPage?.removeAllListeners('close')
     client.pupPage?.removeAllListeners('error')
@@ -641,7 +669,7 @@ const reloadSession = async (sessionId) => {
     } catch (e) {
       const childProcess = client.pupBrowser.process()
       if (childProcess) {
-        childProcess.kill(9)
+  childProcess.kill(9)
       }
     }
     sessions.delete(sessionId)
