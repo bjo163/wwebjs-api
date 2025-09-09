@@ -1,14 +1,47 @@
 const axios = require('axios')
-const { globalApiKey, disabledCallbacks, enableWebHook } = require('./config')
+const { globalApiKey, disabledCallbacks, enableWebHook, webhookTimeoutMs, webhookMaxRetries } = require('./config')
 const { logger } = require('./logger')
 
 // Trigger webhook endpoint
-const triggerWebhook = (webhookURL, sessionId, dataType, data) => {
-  if (enableWebHook) {
-    axios.post(webhookURL, { dataType, data, sessionId }, { headers: { 'x-api-key': globalApiKey } })
-      .then(() => logger.debug({ sessionId, dataType, data: data || '' }, `Webhook message sent to ${webhookURL}`))
-      .catch(error => logger.error({ sessionId, dataType, err: error, data: data || '' }, `Failed to send webhook message to ${webhookURL}`))
+const triggerWebhook = async (webhookURL, sessionId, dataType, data) => {
+  if (!enableWebHook) return
+  if (!webhookURL) {
+    logger.warn({ sessionId, dataType }, 'Webhook disabled: BASE_WEBHOOK_URL not set')
+    return
   }
+  const payload = { dataType, data, sessionId }
+  const headers = { 'x-api-key': globalApiKey, 'content-type': 'application/json' }
+  const isHttp = /^https?:\/\//i.test(webhookURL)
+  if (!isHttp) {
+    logger.error({ sessionId, dataType, webhookURL }, 'Invalid webhook URL (must start with http/https)')
+    return
+  }
+  let attempt = 0
+  let lastErr
+  const maxRetries = Math.max(0, webhookMaxRetries)
+  while (attempt <= maxRetries) {
+    const start = Date.now()
+    try {
+      await axios.post(webhookURL, payload, { headers, timeout: webhookTimeoutMs })
+      const ms = Date.now() - start
+      logger.info({ sessionId, dataType, ms, attempt }, 'Webhook delivered')
+      return
+    } catch (error) {
+      lastErr = error
+      const ms = Date.now() - start
+      const status = error.response?.status
+      const body = error.response?.data
+      const code = error.code
+      logger.warn({ sessionId, dataType, attempt, ms, status, code, bodySnippet: body && JSON.stringify(body).slice(0, 500) }, 'Webhook attempt failed')
+      // Do not retry for 4xx except 408/429
+      if (status && status >= 400 && status < 500 && status !== 408 && status !== 429) break
+      if (attempt === maxRetries) break
+      const backoff = Math.min(1000 * Math.pow(2, attempt), 10000)
+      await new Promise(r => setTimeout(r, backoff))
+      attempt++
+    }
+  }
+  logger.error({ sessionId, dataType, webhookURL, err: lastErr?.message, stack: lastErr?.stack }, 'Webhook delivery failed after retries')
 }
 
 // Function to send a response with error status and message

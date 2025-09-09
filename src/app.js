@@ -4,6 +4,13 @@ const { routes } = require('./routes')
 const { maxAttachmentSize } = require('./config')
 
 const app = express()
+try {
+	const { baseWebhookURL, enableWebHook } = require('./config')
+	const { logger } = require('./logger')
+	if (enableWebHook && !baseWebhookURL) {
+		logger.warn('ENABLE_WEBHOOK is true but BASE_WEBHOOK_URL is not set')
+	}
+} catch (_) {}
 
 // Initialize Express app
 app.disable('x-powered-by')
